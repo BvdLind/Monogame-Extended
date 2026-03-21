@@ -37,61 +37,63 @@ namespace MonoGame.Extended.Tiled.Renderers
         }
 
         private IEnumerable<TiledMapLayerModel> CreateTileLayerModels(TiledMap map, TiledMapTileLayer tileLayer)
-        {
-            var layerModels = new List<TiledMapLayerModel>();
-            var staticLayerBuilder = new TiledMapStaticLayerModelBuilder();
-            var animatedLayerBuilder = new TiledMapAnimatedLayerModelBuilder();
+{
+	var layerModels = new List<TiledMapLayerModel>();
+	var staticLayerBuilder = new TiledMapStaticLayerModelBuilder();
+	var animatedLayerBuilder = new TiledMapAnimatedLayerModelBuilder();
 
-            foreach (var tileset in map.Tilesets)
-            {
-				var firstGlobalIdentifier = map.GetTilesetFirstGlobalIdentifier(tileset);
-				var lastGlobalIdentifier = tileset.TileCount + firstGlobalIdentifier - 1;
-                var texture = tileset.Texture;
+	foreach (var tileset in map.Tilesets)
+	{
+		var firstGlobalIdentifier = map.GetTilesetFirstGlobalIdentifier(tileset);
+		var lastGlobalIdentifier = tileset.TileCount + firstGlobalIdentifier - 1;
+		var texture = tileset.Texture;
 
-                foreach (var tile in tileLayer.Tiles.Where(t => firstGlobalIdentifier <= t.GlobalIdentifier && t.GlobalIdentifier <= lastGlobalIdentifier))
-                {
-                    var tileGid = tile.GlobalIdentifier;
-                    var localTileIdentifier = tileGid - firstGlobalIdentifier;
-                    var position = GetTilePosition(map, tile);
-                    var sourceRectangle = tileset.GetTileRegion(localTileIdentifier);
-                    var flipFlags = tile.Flags;
+		foreach (var tile in tileLayer.Tiles.Where(t => firstGlobalIdentifier <= t.GlobalIdentifier && t.GlobalIdentifier <= lastGlobalIdentifier))
+		{
+			var tileGid = tile.GlobalIdentifier;
+			var localTileIdentifier = tileGid - firstGlobalIdentifier;
+			var position = GetTilePosition(map, tile);
+			var sourceRectangle = tileset.GetTileRegion(localTileIdentifier);
+			var flipFlags = tile.Flags;
 
-                    // animated tiles
-                    var tilesetTile = tileset.Tiles.FirstOrDefault(x => x.LocalTileIdentifier == localTileIdentifier);
-                    if (tilesetTile?.Texture is not null)
-                    {
-                        position.Y += map.TileHeight - sourceRectangle.Height;
-                        texture = tilesetTile.Texture;
-                    }
+			if (tileset.TileHeight > tileLayer.TileHeight) position.Y -= tileset.TileHeight - tileLayer.TileHeight;
 
-                    if (tilesetTile is TiledMapTilesetAnimatedTile animatedTilesetTile)
-                    {
-                        animatedLayerBuilder.AddSprite(texture, position, sourceRectangle, flipFlags);
-                        animatedTilesetTile.CreateTextureRotations(tileset, flipFlags);
-                        animatedLayerBuilder.AnimatedTilesetTiles.Add(animatedTilesetTile);
-                        animatedLayerBuilder.AnimatedTilesetFlipFlags.Add(flipFlags);
+			// animated tiles
+			var tilesetTile = tileset.Tiles.FirstOrDefault(x => x.LocalTileIdentifier == localTileIdentifier);
+			if (tilesetTile?.Texture is not null)
+			{
+				position.Y += map.TileHeight - sourceRectangle.Height;
+				texture = tilesetTile.Texture;
+			}
 
-                        if (animatedLayerBuilder.IsFull)
-                            layerModels.Add(animatedLayerBuilder.Build(_graphicsDevice, texture));
-                    }
-                    else
-                    {
-                        staticLayerBuilder.AddSprite(texture, position, sourceRectangle, flipFlags);
+			if (tilesetTile is TiledMapTilesetAnimatedTile animatedTilesetTile)
+			{
+				animatedLayerBuilder.AddSprite(texture, position, sourceRectangle, flipFlags);
+				animatedTilesetTile.CreateTextureRotations(tileset, flipFlags);
+				animatedLayerBuilder.AnimatedTilesetTiles.Add(animatedTilesetTile);
+				animatedLayerBuilder.AnimatedTilesetFlipFlags.Add(flipFlags);
 
-                        if (staticLayerBuilder.IsFull)
-                            layerModels.Add(staticLayerBuilder.Build(_graphicsDevice, texture));
-                    }
-                }
+				if (animatedLayerBuilder.IsFull)
+					layerModels.Add(animatedLayerBuilder.Build(_graphicsDevice, texture));
+			}
+			else
+			{
+				staticLayerBuilder.AddSprite(texture, position, sourceRectangle, flipFlags);
 
-                if (staticLayerBuilder.IsBuildable)
-                    layerModels.Add(staticLayerBuilder.Build(_graphicsDevice, texture));
+				if (staticLayerBuilder.IsFull)
+					layerModels.Add(staticLayerBuilder.Build(_graphicsDevice, texture));
+			}
+		}
 
-                if (animatedLayerBuilder.IsBuildable)
-                    layerModels.Add(animatedLayerBuilder.Build(_graphicsDevice, texture));
-            }
+		if (staticLayerBuilder.IsBuildable)
+			layerModels.Add(staticLayerBuilder.Build(_graphicsDevice, texture));
 
-            return layerModels;
-        }
+		if (animatedLayerBuilder.IsBuildable)
+			layerModels.Add(animatedLayerBuilder.Build(_graphicsDevice, texture));
+	}
+
+	return layerModels;
+}
 
         public TiledMapModel Build(TiledMap map)
         {
