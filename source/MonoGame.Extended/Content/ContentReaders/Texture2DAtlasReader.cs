@@ -29,7 +29,7 @@ namespace MonoGame.Extended.Content.ContentReaders
         protected override Texture2DAtlas Read(ContentReader reader, Texture2DAtlas existingInstance)
         {
             var imageAssetName = reader.ReadString();
-            var texture = reader.ContentManager.Load<Texture2D>(reader.GetRelativeAssetName(imageAssetName));
+            var texture = reader.ContentManager.Load<Texture2D>(imageAssetName);
             var atlas = new Texture2DAtlas(reader.AssetName, texture);
 
             var regionCount = reader.ReadInt32();

@@ -377,7 +377,8 @@ public class Texture2DAtlas : IEnumerable<Texture2DRegion>
         _regionsByName.Clear();
     }
 
-    private void AddRegion(Texture2DRegion region)
+    // Made public to support combining multipack atlas pages at load time.
+    public void AddRegion(Texture2DRegion region)
     {
         if (_regionsByName.ContainsKey(region.Name))
         {
